@@ -5,6 +5,7 @@ from typing import List
 from app import models
 from app.db import get_db
 from app.schemas import PostCreate, PostUpdate, PostResponse
+from oauth2 import get_current_user
 
 router = APIRouter(
     prefix="/posts",
@@ -19,7 +20,8 @@ def get_posts(db: Session = Depends(get_db)):
 
 @router.post("", status_code=status.HTTP_201_CREATED,
              response_model=PostResponse)
-def create_post(post: PostCreate, db: Session = Depends(get_db)):
+def create_post(post: PostCreate, db: Session = Depends(get_db),
+                 current_user: models.User = Depends(get_current_user)):
 
     new_post = models.Post(
         title=post.title,
