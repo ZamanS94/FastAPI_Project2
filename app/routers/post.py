@@ -54,10 +54,13 @@ def get_post(id: int, db: Session = Depends(get_db),current_user: models.User = 
 
 
 @router.delete("/{id}", status_code=status.HTTP_204_NO_CONTENT)
-def delete_post(id: int, db: Session = Depends(get_db),current_user: models.User = Depends(get_current_user)):
+def delete_post(
+    id: int,
+    db: Session = Depends(get_db),
+    current_user: models.User = Depends(get_current_user)
+):
 
     post_query = db.query(models.Post).filter(models.Post.id == id)
-
     post = post_query.first()
 
     if not post:
@@ -66,21 +69,36 @@ def delete_post(id: int, db: Session = Depends(get_db),current_user: models.User
             detail="Post not found"
         )
 
+    if post.owner_id != current_user.id:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Not allowed to delete this post"
+        )
+
     post_query.delete(synchronize_session=False)
     db.commit()
 
-
 @router.put("/{id}", response_model=PostResponse)
-def update_post(id: int, post: PostUpdate, db: Session = Depends(get_db),current_user: models.User = Depends(get_current_user)):
+def update_post(
+    id: int,
+    post: PostUpdate,
+    db: Session = Depends(get_db),
+    current_user: models.User = Depends(get_current_user)
+):
 
     post_query = db.query(models.Post).filter(models.Post.id == id)
-
     existing_post = post_query.first()
 
     if not existing_post:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Post not found"
+        )
+
+    if existing_post.owner_id != current_user.id:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Not allowed to update this post"
         )
 
     post_query.update(

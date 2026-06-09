@@ -12,7 +12,7 @@ class PostCreate(PostBase):
     pass
 
 class PostUpdate(PostBase):
-    pass
+    owner_id: int
 
 class PostResponse(BaseModel):
     title: str
