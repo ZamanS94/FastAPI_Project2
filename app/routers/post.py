@@ -1,6 +1,6 @@
 from fastapi import APIRouter, HTTPException, Depends, status
 from sqlalchemy.orm import Session
-from typing import List
+from typing import List, Optional
 
 from app import models
 from app.db import get_db
@@ -14,10 +14,11 @@ router = APIRouter(
 
 
 @router.get("", response_model=List[PostResponse],)
-def get_posts(db: Session = Depends(get_db),current_user: models.User = Depends(get_current_user)):
+def get_posts(db: Session = Depends(get_db),current_user: models.User = Depends(get_current_user),
+              limit: int=10,search: Optional[str]=""):
     
     #print(current_user.email)
-    return db.query(models.Post).all()
+    return db.query(models.Post).filter(models.Post.title.contains(search)).limit(limit).all()
 
 
 @router.post("", status_code=status.HTTP_201_CREATED,
