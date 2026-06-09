@@ -13,8 +13,10 @@ router = APIRouter(
 )
 
 
-@router.get("", response_model=List[PostResponse])
-def get_posts(db: Session = Depends(get_db)):
+@router.get("", response_model=List[PostResponse],)
+def get_posts(db: Session = Depends(get_db),current_user: models.User = Depends(get_current_user)):
+    
+    #print(current_user.email)
     return db.query(models.Post).all()
 
 
@@ -26,7 +28,8 @@ def create_post(post: PostCreate, db: Session = Depends(get_db),
     new_post = models.Post(
         title=post.title,
         content=post.content,
-        published=post.published
+        published=post.published,
+        owner_id=current_user.id
     )
 
     db.add(new_post)
@@ -36,8 +39,8 @@ def create_post(post: PostCreate, db: Session = Depends(get_db),
     return new_post
 
 
-@router.get("/{id}", response_model=PostResponse)
-def get_post(id: int, db: Session = Depends(get_db)):
+@router.get("/{id}", response_model=PostResponse,)
+def get_post(id: int, db: Session = Depends(get_db),current_user: models.User = Depends(get_current_user)):
 
     post = db.query(models.Post).filter(models.Post.id == id).first()
 
@@ -51,7 +54,7 @@ def get_post(id: int, db: Session = Depends(get_db)):
 
 
 @router.delete("/{id}", status_code=status.HTTP_204_NO_CONTENT)
-def delete_post(id: int, db: Session = Depends(get_db)):
+def delete_post(id: int, db: Session = Depends(get_db),current_user: models.User = Depends(get_current_user)):
 
     post_query = db.query(models.Post).filter(models.Post.id == id)
 
@@ -68,7 +71,7 @@ def delete_post(id: int, db: Session = Depends(get_db)):
 
 
 @router.put("/{id}", response_model=PostResponse)
-def update_post(id: int, post: PostUpdate, db: Session = Depends(get_db)):
+def update_post(id: int, post: PostUpdate, db: Session = Depends(get_db),current_user: models.User = Depends(get_current_user)):
 
     post_query = db.query(models.Post).filter(models.Post.id == id)
 

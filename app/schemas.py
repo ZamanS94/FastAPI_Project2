@@ -7,6 +7,7 @@ class PostBase(BaseModel):
     content: str
     published: bool = True
 
+
 class PostCreate(PostBase):
     pass
 
@@ -17,6 +18,7 @@ class PostResponse(BaseModel):
     title: str
     content: str
     published: bool
+    owner_id: int
 
     class Config:
         from_attributes = True
