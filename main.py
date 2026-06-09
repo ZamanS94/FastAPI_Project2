@@ -5,6 +5,7 @@ from typing import List
 from sqlalchemy import text
 from app import models
 from app.db import engine, get_db
+from utils.utils import hash
 
 #table
 models.Base.metadata.create_all(bind=engine)
@@ -106,10 +107,28 @@ def db_check(db: Session = Depends(get_db)):
         return {"db_status": "FAILED", "error": str(e)}
     
 # user creation
-@app.post("/users", status_code=status.HTTP_201_CREATED, response_model=UserResponse)
+@app.post("/users", response_model=UserResponse)
 def create_user(user: UserCreate, db: Session = Depends(get_db)):
-    new_user = models.User(email=user.email, password=user.password)
+    password = hash(user.password)
+    new_user = models.User(email=user.email, password=password)
+
     db.add(new_user)
     db.commit()
     db.refresh(new_user)
     return new_user
+
+
+
+# single user
+@app.get("/users/{id}",response_model=UserResponse)
+def get_user(id: int, db: Session = Depends(get_db)):
+
+    post = db.query(models.User).filter(models.User.id == id).first()
+
+    if not post:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="User not found"
+        )
+
+    return post
