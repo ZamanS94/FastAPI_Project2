@@ -1,5 +1,5 @@
 from fastapi import FastAPI, HTTPException, Depends, status
-from app.schemas import PostCreate, PostUpdate, PostResponse
+from app.schemas import PostCreate, PostUpdate, PostResponse, UserCreate, UserResponse
 from sqlalchemy.orm import Session
 from typing import List
 from sqlalchemy import text
@@ -104,3 +104,12 @@ def db_check(db: Session = Depends(get_db)):
         return {"db_status": "OK", "result": result[0]}
     except Exception as e:
         return {"db_status": "FAILED", "error": str(e)}
+    
+# user creation
+@app.post("/users", status_code=status.HTTP_201_CREATED, response_model=UserResponse)
+def create_user(user: UserCreate, db: Session = Depends(get_db)):
+    new_user = models.User(email=user.email, password=user.password)
+    db.add(new_user)
+    db.commit()
+    db.refresh(new_user)
+    return new_user
