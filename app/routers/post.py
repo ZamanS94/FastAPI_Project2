@@ -1,11 +1,12 @@
 from fastapi import APIRouter, HTTPException, Depends, status
 from sqlalchemy.orm import Session
 from typing import List, Optional
+from sqlalchemy import func
 
 from app import models
 from app.db import get_db
-from app.schemas import PostCreate, PostUpdate, PostResponse
-from oauth2 import get_current_user
+from app.schemas import PostCreate, PostUpdate, PostResponse, PostOut
+from app.oauth2 import get_current_user
 
 router = APIRouter(
     prefix="/posts",
@@ -13,13 +14,15 @@ router = APIRouter(
 )
 
 
-@router.get("", response_model=List[PostResponse],)
-def get_posts(db: Session = Depends(get_db),current_user: models.User = Depends(get_current_user),
-              limit: int=10,search: Optional[str]=""):
-    
+@router.get("", response_model=List[PostOut],)
+#def get_posts(db: Session = Depends(get_db),current_user: models.User = Depends(get_current_user),
+ #             limit: int=10,search: Optional[str]=""):
+def get_posts(db: Session = Depends(get_db), current_user: int = Depends(get_current_user), limit: int = 10, skip: int = 0, search: Optional[str] = ""):   
     #print(current_user.email)
-    return db.query(models.Post).filter(models.Post.title.contains(search)).limit(limit).all()
-
+    #return db.query(models.Post).filter(models.Post.title.contains(search)).limit(limit).all()
+    posts = db.query(models.Post, func.count(models.Vote.post_id).label("votes")).join(
+        models.Vote, models.Vote.post_id == models.Post.id, isouter=True).group_by(models.Post.id).filter(models.Post.title.contains(search)).limit(limit).offset(skip).all()
+    return posts
 
 @router.post("", status_code=status.HTTP_201_CREATED,
              response_model=PostResponse)
@@ -40,10 +43,12 @@ def create_post(post: PostCreate, db: Session = Depends(get_db),
     return new_post
 
 
-@router.get("/{id}", response_model=PostResponse,)
+@router.get("/{id}", response_model=PostOut,)
 def get_post(id: int, db: Session = Depends(get_db),current_user: models.User = Depends(get_current_user)):
 
-    post = db.query(models.Post).filter(models.Post.id == id).first()
+    #post = db.query(models.Post).filter(models.Post.id == id).first()
+    post = db.query(models.Post, func.count(models.Vote.post_id).label("votes")).join(
+        models.Vote, models.Vote.post_id == models.Post.id, isouter=True).group_by(models.Post.id).filter(models.Post.id == id).first()
 
     if not post:
         raise HTTPException(

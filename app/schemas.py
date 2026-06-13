@@ -1,6 +1,7 @@
 # Pydantic schema
-from pydantic import BaseModel, EmailStr
-from typing import Optional
+from pydantic import BaseModel, EmailStr, Field
+from typing import Optional, Annotated
+from pydantic.types import conint
 
 
 class UserCreate(BaseModel):
@@ -46,3 +47,16 @@ class Token(BaseModel):
 
 class TokenData(BaseModel):
     id: int
+
+class Vote(BaseModel):
+    post_id: int
+    dir: Annotated[int, Field(ge=0, le=1)] # not saved in db, only decides if vote to put or not
+                                            # if value 1, put vote, if 0 delete vote, kind of indication
+
+
+class PostOut(BaseModel):
+    Post: PostResponse
+    votes: int
+
+    class Config:
+        orm_mode = True
